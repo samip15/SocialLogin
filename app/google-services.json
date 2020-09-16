@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "286142984226",
+    "firebase_url": "https://sociallogin-48b37.firebaseio.com",
+    "project_id": "sociallogin-48b37",
+    "storage_bucket": "sociallogin-48b37.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:286142984226:android:17569dab3fc46acc2e5a7b",
+        "android_client_info": {
+          "package_name": "com.example.sociallogin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "286142984226-5mvg3dg78lo1050quphttcfnuo4t4trt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sociallogin",
+            "certificate_hash": "79abb0f845efb9630600790177af138a36b0431a"
+          }
+        },
+        {
+          "client_id": "286142984226-7pjt5c4ho01kgmh8702s6it11top3cc4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD7RmCyf6cDRHMwGByi8rqtIJVW8Ha0ss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "286142984226-7pjt5c4ho01kgmh8702s6it11top3cc4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
