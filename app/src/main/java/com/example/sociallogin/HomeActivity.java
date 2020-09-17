@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
+import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -56,46 +57,48 @@ public class HomeActivity extends AppCompatActivity {
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(this,signInOptions);
+        mGoogleSignInClient = GoogleSignIn.getClient(this, signInOptions);
         mGoogleAccount = GoogleSignIn.getLastSignedInAccount(this);
 
         logoutBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 logoutUser();
+
             }
         });
         updateUI();
+        Intent intent = getIntent();
+        Bundle inBundle = intent.getExtras();
+        if (inBundle != null) {
+            String name = inBundle.get("name").toString();
+            String surname = inBundle.get("surname").toString();
+            String imageUrl = inBundle.get("imageUrl").toString();
+            userName.setText(name + " " + surname);
+            new HomeActivity.DownloadImage(userImage).execute(imageUrl);
+        }
 
-        Bundle inBundle = getIntent().getExtras();
-        String name = inBundle.get("name").toString();
-        String surname = inBundle.get("surname").toString();
-        String imageUrl = inBundle.get("imageUrl").toString();
-        userName.setText("" + name +  "  "  + surname);
-
-        new DownloadImage(userImage).execute(imageUrl);
     }
 
     /**
      * Update UI for logged in user
      */
-    private void updateUI()
-    {
+    private void updateUI() {
         SharedPref sharedPrefs = SharedPref.getInstance();
-        HashMap<String,String> userData = sharedPrefs.getUserData(this);
-        if(userData !=null)
-        {
+        HashMap<String, String> userData = sharedPrefs.getUserData(this);
+        if (userData != null) {
             userName.setText(userData.get("displayName"));
             userEmail.setText(userData.get("email"));
             Picasso.get().load(userData.get("userImage")).into(userImage);
         }
+
+
     }
 
     /**
      * Logout the user
      */
-    private void logoutUser()
-    {
+    private void logoutUser() {
         SharedPref sharedPrefs = SharedPref.getInstance();
         sharedPrefs.clearUserData(this);
 
@@ -105,40 +108,43 @@ public class HomeActivity extends AppCompatActivity {
         mGoogleSignInClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                if(task.isSuccessful())
-                {
+                if (task.isSuccessful()) {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                     startActivity(intent);
-                }
-                else{
+                } else {
                     Toast.makeText(HomeActivity.this, "Cant logout", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
+        LoginManager.getInstance().logOut();
+        Intent login = new Intent(HomeActivity.this, MainActivity.class);
+        startActivity(login);
+        finish();
 
     }
 
     public class DownloadImage extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
 
-        public DownloadImage(ImageView bmImage){
+        public DownloadImage(ImageView bmImage) {
             this.bmImage = bmImage;
         }
 
-        protected Bitmap doInBackground(String... urls){
+        protected Bitmap doInBackground(String... urls) {
             String urldisplay = urls[0];
             Bitmap mIcon11 = null;
-            try{
+            try {
                 InputStream in = new java.net.URL(urldisplay).openStream();
                 mIcon11 = BitmapFactory.decodeStream(in);
-            }catch (Exception e){
+            } catch (Exception e) {
                 Log.e("Error", e.getMessage());
                 e.printStackTrace();
             }
             return mIcon11;
         }
 
-        protected void onPostExecute(Bitmap result){
+        protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
         }
 

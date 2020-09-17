@@ -6,51 +6,48 @@
     tools:context=".MainActivity">
 
 
-
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/googleSignInBtn"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
+        android:layout_height="41dp"
+        android:layout_centerInParent="true"
         android:layout_gravity="center"
         android:layout_marginTop="10dp"
         android:background="@drawable/back_button"
         android:drawableStart="@drawable/download"
+        android:drawableLeft="@drawable/download"
         android:drawablePadding="20dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
         android:paddingLeft="15dp"
+        android:paddingTop="10dp"
         android:paddingRight="15dp"
+        android:paddingBottom="10dp"
         android:text="Log in with Google"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_centerInParent="true"
-        android:drawableLeft="@drawable/download" />
+        android:textStyle="bold" />
 
     <com.facebook.login.widget.LoginButton
-        android:layout_below="@+id/googleSignInBtn"
         android:id="@+id/fbSignInBtn"
-        android:layout_width="wrap_content"
+        android:layout_width="322dp"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/googleSignInBtn"
+        android:layout_centerInParent="true"
         android:layout_gravity="center"
         android:layout_marginTop="30dp"
         android:background="@color/colorPrimary"
         android:drawableStart="@drawable/com_facebook_button_icon"
+        android:drawableLeft="@drawable/com_facebook_button_icon"
         android:drawablePadding="20dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
         android:paddingLeft="15dp"
+        android:paddingTop="10dp"
         android:paddingRight="15dp"
+        android:paddingBottom="10dp"
         android:text="Log in with Facebook"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_centerInParent="true"
-        android:drawableLeft="@drawable/com_facebook_button_icon" />
+        android:textStyle="bold" />
 
 
 </RelativeLayout>

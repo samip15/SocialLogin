@@ -79,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
         };
         accessTokenTracker.startTracking();
         profileTracker.startTracking();
-        LoginButton loginButton =  findViewById(R.id.fbSignInBtn);
-        loginButton.setPermissions("email","public_profile");
+        LoginButton loginButton = findViewById(R.id.fbSignInBtn);
+        loginButton.setPermissions("email", "public_profile");
         checkLoginStatus();
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
@@ -92,11 +92,14 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onCancel() {
+                Toast.makeText(MainActivity.this, "User Cancelled", Toast.LENGTH_SHORT).show();
 
             }
 
             @Override
             public void onError(FacebookException error) {
+
+                Toast.makeText(MainActivity.this, "Sign In Failed", Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -117,8 +120,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mAuth = FirebaseAuth.getInstance();
-
-
     }
     // ============================ VIEW CONTROL ===========================
 
@@ -143,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
     // ============================ LOGIN RESULT ===========================
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        callbackManager.onActivityResult(requestCode,resultCode,data);
+        callbackManager.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
         //check if the intent is launched
         if (requestCode == REQ_GOOGLE_SIGN_IN) {
@@ -157,48 +158,48 @@ public class MainActivity extends AppCompatActivity {
             } catch (ApiException e) {
                 //google sign in failed
                 Log.e(TAG, "onActivityResult: SignInFailed", e);
-                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "SignInFailed", Toast.LENGTH_SHORT).show();
             }
         }
 
     }
 
-    private void nextActivity(Profile profile){
-        if(profile != null){
+    private void nextActivity(Profile profile) {
+        if (profile != null) {
             Intent main = new Intent(MainActivity.this, HomeActivity.class);
             main.putExtra("name", profile.getFirstName());
             main.putExtra("surname", profile.getLastName());
-            main.putExtra("imageUrl", profile.getProfilePictureUri(200,200).toString());
+            main.putExtra("imageUrl", profile.getProfilePictureUri(200, 200).toString());
             startActivity(main);
         }
     }
 
     // load user profile
-        private void loadUserProfile(AccessToken newAccessToken) {
-            GraphRequest request = GraphRequest.newMeRequest(newAccessToken, new GraphRequest.GraphJSONObjectCallback() {
-                @Override
-                public void onCompleted(JSONObject object, GraphResponse response) {
-                    try {
-                        String first_name = object.getString("first_name");
-                        String last_name = object.getString("last_name");
-                        String email = object.getString("email");
-                        String id = object.getString("id");
-                        String image_url = "https://graph.facebook.com/" + id + "/picture?type=normal";
-                        SharedPref sharedPrefs = SharedPref.getInstance();
-                        sharedPrefs.saveUserData(getApplicationContext(),
-                                first_name + " " + last_name,
-                                email,
-                                image_url);
+    private void loadUserProfile(AccessToken newAccessToken) {
+        GraphRequest request = GraphRequest.newMeRequest(newAccessToken, new GraphRequest.GraphJSONObjectCallback() {
+            @Override
+            public void onCompleted(JSONObject object, GraphResponse response) {
+                try {
+                    String first_name = object.getString("first_name");
+                    String last_name = object.getString("last_name");
+                    String email = object.getString("email");
+                    String id = object.getString("id");
+                    String image_url = "https://graph.facebook.com/" + id + "/picture?type=normal";
+                    SharedPref sharedPrefs = SharedPref.getInstance();
+                    sharedPrefs.saveUserData(getApplicationContext(),
+                            first_name + " " + last_name,
+                            email,
+                            image_url);
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
-            });
-            Bundle parameters = new Bundle();
-            parameters.putString("fields", "first_name,last_name,email,id");
-            request.setParameters(parameters);
-            request.executeAsync();
+            }
+        });
+        Bundle parameters = new Bundle();
+        parameters.putString("fields", "first_name,last_name,email,id");
+        request.setParameters(parameters);
+        request.executeAsync();
 
     }
 
@@ -296,8 +297,8 @@ public class MainActivity extends AppCompatActivity {
                 user.getPhotoUrl().toString());
     }
 
-    private void checkLoginStatus(){
-        if (AccessToken.getCurrentAccessToken()!=null){
+    private void checkLoginStatus() {
+        if (AccessToken.getCurrentAccessToken() != null) {
             loadUserProfile(AccessToken.getCurrentAccessToken());
         }
     }
