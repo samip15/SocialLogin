@@ -5,12 +5,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.facebook.FacebookSdk;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -20,11 +25,16 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.squareup.picasso.Picasso;
 
+import java.io.InputStream;
+import java.util.HashMap;
+
 public class HomeActivity extends AppCompatActivity {
 
     private AppCompatButton logoutBtn;
     ImageView userImage;
     TextView userEmail, userName;
+
+    private static final String TAG = "HomeActivity";
 
     //auth
     FirebaseAuth mAuth;
@@ -34,6 +44,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FacebookSdk.sdkInitialize(this);
         setContentView(R.layout.activity_home);
         logoutBtn = findViewById(R.id.logoutBtn);
         userImage = findViewById(R.id.userImage);
@@ -55,6 +66,14 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
         updateUI();
+
+        Bundle inBundle = getIntent().getExtras();
+        String name = inBundle.get("name").toString();
+        String surname = inBundle.get("surname").toString();
+        String imageUrl = inBundle.get("imageUrl").toString();
+        userName.setText("" + name +  "  "  + surname);
+
+        new DownloadImage(userImage).execute(imageUrl);
     }
 
     /**
@@ -62,11 +81,13 @@ public class HomeActivity extends AppCompatActivity {
      */
     private void updateUI()
     {
-        if(mGoogleAccount !=null)
+        SharedPref sharedPrefs = SharedPref.getInstance();
+        HashMap<String,String> userData = sharedPrefs.getUserData(this);
+        if(userData !=null)
         {
-            userName.setText(mGoogleAccount.getDisplayName());
-            userEmail.setText(mGoogleAccount.getEmail());
-            Picasso.get().load(mGoogleAccount.getPhotoUrl()).into(userImage);
+            userName.setText(userData.get("displayName"));
+            userEmail.setText(userData.get("email"));
+            Picasso.get().load(userData.get("userImage")).into(userImage);
         }
     }
 
@@ -75,6 +96,9 @@ public class HomeActivity extends AppCompatActivity {
      */
     private void logoutUser()
     {
+        SharedPref sharedPrefs = SharedPref.getInstance();
+        sharedPrefs.clearUserData(this);
+
         //first sign out from firebase
         mAuth.signOut();
         //then sign out from the google sign in
@@ -91,6 +115,32 @@ public class HomeActivity extends AppCompatActivity {
                 }
             }
         });
+
+    }
+
+    public class DownloadImage extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImage(ImageView bmImage){
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls){
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try{
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            }catch (Exception e){
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result){
+            bmImage.setImageBitmap(result);
+        }
 
     }
 }

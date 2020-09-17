@@ -36,6 +36,16 @@ public class SharedPref {
     }
 
 
+    public void clearUserData(Context context)
+    {
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+    }
+
+
+
     public HashMap<String, String> getUserData(Context context)
     {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);

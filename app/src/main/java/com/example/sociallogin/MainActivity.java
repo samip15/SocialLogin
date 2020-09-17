@@ -6,8 +6,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -21,6 +23,8 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.Profile;
+import com.facebook.ProfileTracker;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -32,6 +36,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -42,12 +47,12 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    TextView email_txt,name_txt;
-    ImageView img;
     //google sign in vars
     private GoogleSignInClient mGoogleSignInClient;
     private AppCompatButton signInButton;
     private CallbackManager callbackManager;
+    private ProfileTracker profileTracker;
+    private AccessTokenTracker accessTokenTracker;
     //firebase auth
     private FirebaseAuth mAuth;
     //req code
@@ -58,18 +63,31 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         signInButton = findViewById(R.id.googleSignInBtn);
-        name_txt = findViewById(R.id._name);
-        email_txt = findViewById(R.id.email);
-        img = findViewById(R.id.image_view);
         // face book
         callbackManager = CallbackManager.Factory.create();
+        accessTokenTracker = new AccessTokenTracker() {
+            @Override
+            protected void onCurrentAccessTokenChanged(AccessToken oldToken, AccessToken newToken) {
+            }
+        };
+
+        profileTracker = new ProfileTracker() {
+            @Override
+            protected void onCurrentProfileChanged(Profile oldProfile, Profile newProfile) {
+                nextActivity(newProfile);
+            }
+        };
+        accessTokenTracker.startTracking();
+        profileTracker.startTracking();
         LoginButton loginButton =  findViewById(R.id.fbSignInBtn);
         loginButton.setPermissions("email","public_profile");
         checkLoginStatus();
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-
+                Profile profile = Profile.getCurrentProfile();
+                nextActivity(profile);
+                Toast.makeText(getApplicationContext(), "Logging in...", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -82,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
 
         //configure google sign in
         GoogleSignInOptions signInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -143,55 +162,53 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-    // access token tracker for fb
-    AccessTokenTracker tokenTracker = new AccessTokenTracker() {
-        @Override
-        protected void onCurrentAccessTokenChanged(AccessToken oldAccessToken, AccessToken currentAccessToken) {
-            if (currentAccessToken==null){
-                name_txt.setText("");
-                email_txt.setText("");
-                img.setImageResource(0);
-                Toast.makeText(MainActivity.this, "User Loged Out", Toast.LENGTH_SHORT).show();
-            }else {
-                loadUserProfile(currentAccessToken);
-            }
+
+    private void nextActivity(Profile profile){
+        if(profile != null){
+            Intent main = new Intent(MainActivity.this, HomeActivity.class);
+            main.putExtra("name", profile.getFirstName());
+            main.putExtra("surname", profile.getLastName());
+            main.putExtra("imageUrl", profile.getProfilePictureUri(200,200).toString());
+            startActivity(main);
         }
-    };
+    }
 
     // load user profile
+        private void loadUserProfile(AccessToken newAccessToken) {
+            GraphRequest request = GraphRequest.newMeRequest(newAccessToken, new GraphRequest.GraphJSONObjectCallback() {
+                @Override
+                public void onCompleted(JSONObject object, GraphResponse response) {
+                    try {
+                        String first_name = object.getString("first_name");
+                        String last_name = object.getString("last_name");
+                        String email = object.getString("email");
+                        String id = object.getString("id");
+                        String image_url = "https://graph.facebook.com/" + id + "/picture?type=normal";
+                        SharedPref sharedPrefs = SharedPref.getInstance();
+                        sharedPrefs.saveUserData(getApplicationContext(),
+                                first_name + " " + last_name,
+                                email,
+                                image_url);
 
-    private void loadUserProfile(AccessToken newAccessToken){
-        GraphRequest request = GraphRequest.newMeRequest(newAccessToken, new GraphRequest.GraphJSONObjectCallback() {
-            @Override
-            public void onCompleted(JSONObject object, GraphResponse response) {
-                try {
-                    String first_name = object.getString("first_name");
-                    String last_name = object.getString("last_name");
-                    String email = object.getString("email");
-                    String id = object.getString("id");
-                    String image_url = "https://graph.facebook.com/"+id+"/picture?type=normal";
-                    email_txt.setText(email);
-                    name_txt.setText(first_name+""+last_name);
-                    Picasso.get().load(image_url).into(img);
-
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        });
-        Bundle parameters = new Bundle();
-        parameters.putString("fields","first_name,last_name,email,id");
-        request.setParameters(parameters);
-        request.executeAsync();
+            });
+            Bundle parameters = new Bundle();
+            parameters.putString("fields", "first_name,last_name,email,id");
+            request.setParameters(parameters);
+            request.executeAsync();
+
     }
+
 
     // ============================ GOOGLE SIGN IN ===========================
 
     /**
      * Helps to start the sign in process
      */
-    private void signIn() {
+    public void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, REQ_GOOGLE_SIGN_IN);
     }
@@ -215,6 +232,47 @@ public class MainActivity extends AppCompatActivity {
                             Log.e(TAG, "onComplete: user details " + mUser.getEmail());
                             Log.e(TAG, "onComplete: user details " + mUser.getUid());
                             saveUserData(mUser);
+                            updateUI(mUser);
+                        } else {
+                            //sign in fails display a message
+                            Toast.makeText(MainActivity.this, "Sorry couldnot authenticate you!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+
+    // ============================ FACEBOOK SIGN IN ===========================
+
+
+    AccessTokenTracker tokenTracker = new AccessTokenTracker() {
+        @Override
+        protected void onCurrentAccessTokenChanged(AccessToken oldAccessToken, AccessToken currentAccessToken) {
+            if (currentAccessToken != null) {
+                // handle facebook token
+                firebaseAuthWithFacebook(currentAccessToken);
+//                loadUserProfile(currentAccessToken);
+//                Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
+//                startActivity(intent);
+            }
+        }
+    };
+
+
+    /**
+     * After getting the token add the user to firebase
+     */
+    private void firebaseAuthWithFacebook(final AccessToken token) {
+        Log.e(TAG, "firebaseAuthWithFacebook: " + token);
+        AuthCredential authCredential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(authCredential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            //sign in successful, update your UI to go to next activity
+                            FirebaseUser mUser = mAuth.getCurrentUser();
+                            loadUserProfile(token);
                             updateUI(mUser);
                         } else {
                             //sign in fails display a message
