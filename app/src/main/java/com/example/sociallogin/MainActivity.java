@@ -21,10 +21,12 @@ import com.facebook.AccessTokenTracker;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -45,6 +47,8 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.concurrent.Callable;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     //google sign in vars
@@ -53,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private CallbackManager callbackManager;
     private ProfileTracker profileTracker;
     private AccessTokenTracker accessTokenTracker;
+    private LoginButton mFacebookSignInButton;
     //firebase auth
     private FirebaseAuth mAuth;
     //req code
@@ -61,10 +66,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_main);
         signInButton = findViewById(R.id.googleSignInBtn);
         // face book
         callbackManager = CallbackManager.Factory.create();
+        mFacebookSignInButton = findViewById(R.id.fbSignInBtn);
         accessTokenTracker = new AccessTokenTracker() {
             @Override
             protected void onCurrentAccessTokenChanged(AccessToken oldToken, AccessToken newToken) {
@@ -79,15 +86,18 @@ public class MainActivity extends AppCompatActivity {
         };
         accessTokenTracker.startTracking();
         profileTracker.startTracking();
-        LoginButton loginButton = findViewById(R.id.fbSignInBtn);
-        loginButton.setPermissions("email", "public_profile");
+        mFacebookSignInButton.setPermissions("email", "public_profile");
         checkLoginStatus();
-        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        mFacebookSignInButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                Profile profile = Profile.getCurrentProfile();
-                nextActivity(profile);
-                Toast.makeText(getApplicationContext(), "Logging in...", Toast.LENGTH_SHORT).show();
+                handleSignInResult(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        LoginManager.getInstance().logOut();
+                        return null;
+                    }
+                });
             }
 
             @Override
@@ -236,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
                             updateUI(mUser);
                         } else {
                             //sign in fails display a message
-                            Toast.makeText(MainActivity.this, "Sorry couldnot authenticate you!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Sorry could not authenticate you!", Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
@@ -301,5 +311,8 @@ public class MainActivity extends AppCompatActivity {
         if (AccessToken.getCurrentAccessToken() != null) {
             loadUserProfile(AccessToken.getCurrentAccessToken());
         }
+    }
+    private void handleSignInResult(Object o){
+
     }
 }
