@@ -17,6 +17,9 @@ import android.widget.Toast;
 
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginManager;
+import com.facebook.share.model.ShareLinkContent;
+import com.facebook.share.widget.ShareDialog;
+import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -30,13 +33,11 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 public class HomeActivity extends AppCompatActivity {
-
+    private ShareDialog shareDialog;
     private AppCompatButton logoutBtn;
     ImageView userImage;
     TextView userEmail, userName;
-
     private static final String TAG = "HomeActivity";
-
     //auth
     FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
@@ -51,8 +52,16 @@ public class HomeActivity extends AppCompatActivity {
         userImage = findViewById(R.id.userImage);
         userName = findViewById(R.id.usernameTV);
         userEmail = findViewById(R.id.emailTV);
+        shareDialog = new ShareDialog(this);
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ShareLinkContent content = new ShareLinkContent.Builder().build();
+                shareDialog.show(content);
+            }
+        });
         mAuth = FirebaseAuth.getInstance();
-
         GoogleSignInOptions signInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
@@ -69,15 +78,35 @@ public class HomeActivity extends AppCompatActivity {
         });
         updateUI();
         Intent intent = getIntent();
-        Bundle inBundle = intent.getExtras();
-        if (inBundle != null) {
-            String name = inBundle.get("name").toString();
-            String surname = inBundle.get("surname").toString();
-            String imageUrl = inBundle.get("imageUrl").toString();
-            userName.setText(name + " " + surname);
+        String name = intent.getStringExtra("name");
+        String surname = intent.getStringExtra("surname");
+        String imageUrl = intent.getStringExtra("imageUrl");
+        userName.setText(name + " " + surname);
             new HomeActivity.DownloadImage(userImage).execute(imageUrl);
         }
 
+    public class DownloadImage extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImage(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
     }
 
     /**
@@ -123,30 +152,6 @@ public class HomeActivity extends AppCompatActivity {
         finish();
 
     }
-
-    public class DownloadImage extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImage(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-
-    }
 }
+
+

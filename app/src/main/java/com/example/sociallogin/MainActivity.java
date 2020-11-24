@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         accessTokenTracker = new AccessTokenTracker() {
             @Override
             protected void onCurrentAccessTokenChanged(AccessToken oldToken, AccessToken newToken) {
+
             }
         };
 
@@ -86,35 +87,26 @@ public class MainActivity extends AppCompatActivity {
         };
         accessTokenTracker.startTracking();
         profileTracker.startTracking();
-        mFacebookSignInButton.setPermissions("email", "public_profile");
-        checkLoginStatus();
-        mFacebookSignInButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+        FacebookCallback<LoginResult> callback = new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
-                handleSignInResult(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        LoginManager.getInstance().logOut();
-                        return null;
-                    }
-                });
+                Profile profile = Profile.getCurrentProfile();
+                nextActivity(profile);
+                Toast.makeText(MainActivity.this, "Loggin in....", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onCancel() {
-                Toast.makeText(MainActivity.this, "User Cancelled", Toast.LENGTH_SHORT).show();
 
             }
 
             @Override
             public void onError(FacebookException error) {
 
-                Toast.makeText(MainActivity.this, "Sign In Failed", Toast.LENGTH_SHORT).show();
-
             }
-        });
-
-
+        };
+        mFacebookSignInButton.setPermissions("user_friends");
+        mFacebookSignInButton.registerCallback(callbackManager,callback);
         //configure google sign in
         GoogleSignInOptions signInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -176,13 +168,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void nextActivity(Profile profile) {
-        if (profile != null) {
-            Intent main = new Intent(MainActivity.this, HomeActivity.class);
-            main.putExtra("name", profile.getFirstName());
-            main.putExtra("surname", profile.getLastName());
-            main.putExtra("imageUrl", profile.getProfilePictureUri(200, 200).toString());
-            startActivity(main);
-        }
+       if (profile !=null){
+           Intent main = new Intent(MainActivity.this,HomeActivity.class);
+           main.putExtra("name",profile.getFirstName());
+           main.putExtra("surname",profile.getLastName());
+           main.putExtra("imageUrl",profile.getProfilePictureUri(200,200)).toString();
+           startActivity(main);
+       }
     }
 
     // load user profile
@@ -308,12 +300,24 @@ public class MainActivity extends AppCompatActivity {
                 user.getPhotoUrl().toString());
     }
 
-    private void checkLoginStatus() {
-        if (AccessToken.getCurrentAccessToken() != null) {
-            loadUserProfile(AccessToken.getCurrentAccessToken());
-        }
-    }
-    private void handleSignInResult(Object o){
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Profile profile = Profile.getCurrentProfile();
+        nextActivity(profile);
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        accessTokenTracker.stopTracking();
+        profileTracker.startTracking();
     }
 }

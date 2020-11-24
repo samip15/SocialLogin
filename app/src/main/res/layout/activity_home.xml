@@ -40,4 +40,15 @@
         android:layout_height="wrap_content"
         android:text="Logout"/>
 
+    <com.getbase.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+       android:layout_alignParentBottom="true"
+        android:src="@drawable/ic_my_icon"
+        android:layout_margin="@dimen/fab_margin"
+        android:background="#34D14E"
+        android:layout_alignParentRight="true"
+        app:srcCompat="@android:drawable/ic_menu_edit" />
+
 </RelativeLayout>
